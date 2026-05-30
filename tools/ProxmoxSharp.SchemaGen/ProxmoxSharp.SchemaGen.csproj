@@ -5,6 +5,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Build-time converter tool, not shipped. -->
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
 </Project>
