@@ -47,6 +47,16 @@ dotnet test
 pwsh schema/refresh.ps1 -Node hpe-01    # auto-detects PVE version, writes apidoc.<ver>.js
 ```
 
+## Dev token & secrets
+
+Integration tests read a gitignored `secrets.env` (copy `secrets.env.example`).
+Use a **dedicated read-only** token, not broad creds. The helper creates one
+(privilege-separated, role `PVEAuditor` at `/`) and prints the `secrets.env` lines:
+
+```bash
+pwsh scripts/new-dev-token.ps1 -Node hpe-01
+```
+
 ## Status
 
 Early — M1 scaffold. See the hub plan for milestones (M1 scaffold → M2 first

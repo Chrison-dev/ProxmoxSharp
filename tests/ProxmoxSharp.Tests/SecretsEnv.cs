@@ -66,7 +66,14 @@ internal static class SecretsEnv
             {
                 continue;
             }
-            result[line[..eq].Trim()] = line[(eq + 1)..].Trim();
+            var value = line[(eq + 1)..].Trim();
+            // Strip a single pair of matching surrounding quotes, if present.
+            if (value.Length >= 2 &&
+                ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\'')))
+            {
+                value = value[1..^1];
+            }
+            result[line[..eq].Trim()] = value;
         }
         return result;
     }
