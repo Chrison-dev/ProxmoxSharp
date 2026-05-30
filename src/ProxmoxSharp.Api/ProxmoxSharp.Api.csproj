@@ -5,7 +5,8 @@
     <!-- Version tracks the Proxmox API RELEASE the schema was generated from,
          not SemVer. Breaking changes here are Proxmox's, signalled by this number.
          Generator-only fixes without a PVE bump → 4th-part revision (9.2.2.1). -->
-    <Version>9.2.2</Version>
+    <!-- VersionPrefix (not Version) so CI can append a -preview.N suffix. -->
+    <VersionPrefix>9.2.2</VersionPrefix>
     <Description>Generated Proxmox VE API client (Kiota). Version tracks the PVE API release.</Description>
   </PropertyGroup>
 
