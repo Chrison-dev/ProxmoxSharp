@@ -77,14 +77,19 @@ pwsh scripts/new-dev-token.ps1 -Node hpe-01
 
 ## Packages
 
-Published to **GitHub Packages** by `.github/workflows/publish.yml` on a `v*` tag:
+Published to **GitHub Packages**:
 
-| Package | Version |
-| --- | --- |
-| `ProxmoxSharp.Api` | the Proxmox API release (e.g. `9.2.2`) |
-| `ProxmoxSharp` | independent SemVer (e.g. `0.1.0`); depends on `ProxmoxSharp.Api` |
+| Trigger | Versions | Workflow |
+| --- | --- | --- |
+| push to `main` | **prerelease** — `…-preview.<run>` (e.g. `0.1.0-preview.42`) | `ci.yml` |
+| `v*` tag | **stable** — from `VersionPrefix` (`0.1.0` / `9.2.2`) | `publish.yml` |
+
+So every merge to `main` ships a referenceable prerelease; tagging cuts a stable
+release. `ProxmoxSharp.Api` versions to the Proxmox release (e.g. `9.2.2`),
+`ProxmoxSharp` to its own SemVer, and the library depends on the matching `.Api`.
 
 Consuming needs the GitHub feed (`nuget.config`) + a PAT with `read:packages`.
+To track the latest prerelease, float it: `<PackageReference Include="ProxmoxSharp" Version="0.1.0-preview.*" />`.
 
 ## Status
 
