@@ -58,6 +58,25 @@ var version = await client.Version.GetAsVersionGetResponseAsync();
 var nodes   = await client.Nodes.GetAsNodesGetResponseAsync();
 ```
 
+## CLI (`proxmoxsharp`)
+
+A `dotnet` global tool (`src/ProxmoxSharp.Cli`) wrapping the library — usable from
+the shell. It's self-contained (bundles the library + generated client), so install
+needs only the `ProxmoxSharp.Cli` package, not its dependencies.
+
+```bash
+dotnet tool install -g ProxmoxSharp.Cli   # from the GitHub Packages feed (read:packages)
+
+export PROXMOX_BASE_URL="https://192.168.179.3:8006/api2/json"
+export PROXMOX_TOKEN_ID="root@pam!token"
+export PROXMOX_TOKEN_SECRET="…"
+export PROXMOX_VERIFY_TLS=false
+
+proxmoxsharp version     # PVE version
+proxmoxsharp nodes       # list nodes
+proxmoxsharp discover    # structured ClusterSnapshot as JSON
+```
+
 ## Refresh the schema (new Proxmox release)
 
 ```bash
