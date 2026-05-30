@@ -11,40 +11,58 @@ hub at `docs/plans/BL-009-proxmoxsharp-codegen.md`.
 
 ```
 apidoc.js (version-matched, pulled from our node)
-   │  ProxmoxSharp.SchemaGen   → OpenAPI 3.0 (openapi.json, committed)
+   │  ProxmoxSharp.SchemaGen   → OpenAPI 3.0
    ▼
-Kiota (pinned dotnet tool)     → generated C# request builders + models
+Kiota (pinned dotnet tool)     → generated C# request builders + models  (ProxmoxSharp.Api)
    ▼
-ProxmoxSharp                   = generated client + hand-written runtime (PVEAPIToken auth, {data:…} envelope)
+ProxmoxSharp                   = hand-written runtime over it (PVEAPIToken auth, {data:…} envelope)
 ```
+
+The generated client is **regenerated on build** (incrementally — only when the
+schema changes) and **not committed**. Day-to-day work on the hand-written
+library doesn't regenerate.
 
 - **Read-only first** — token auth, the read path (nodes / LXC / VM / storage /
   network) before any write/lifecycle.
 - **Schema is version-matched** to our cluster (PVE 9.2.2) and pinned under
-  `schema/`. Regeneration is explicit and diffable.
+  `src/ProxmoxSharp.Api/schema/`.
 
-## Layout
+## Projects & versioning
 
-| Path | What |
-| --- | --- |
-| `src/ProxmoxSharp/` | The client library (net10.0) — runtime + (soon) generated code. |
-| `tools/ProxmoxSharp.SchemaGen/` | Converter: `apidoc.js` → OpenAPI 3.0. |
-| `tests/ProxmoxSharp.Tests/` | Unit + (thin) read-only integration tests. |
-| `schema/` | Pinned `apidoc.<pve-version>.js` + `refresh.ps1`. |
-| `.config/dotnet-tools.json` | Pins Kiota. |
+| Project | What | Version |
+| --- | --- | --- |
+| `src/ProxmoxSharp.Api/` | The Kiota-generated client. `Generated/` is produced on build (gitignored). | **Tracks the Proxmox API release** (e.g. `9.2.2`) — breaking changes are Proxmox's. |
+| `src/ProxmoxSharp/` | Hand-written runtime (`ProxmoxApi`, auth, options) over `.Api`. | **Independent SemVer** (`0.1.0`) — our surface's breaking changes drive the major. |
+| `tools/ProxmoxSharp.SchemaGen/` | Converter: `apidoc.js` → OpenAPI 3.0. | — |
+| `tests/ProxmoxSharp.Tests/` | Unit + (thin) read-only integration tests. | — |
+
+The two packages move independently: bump the library for a new feature without
+touching the API version; bump the API when you regenerate from a new Proxmox release.
 
 ## Build
 
 ```bash
-dotnet tool restore     # restore Kiota
-dotnet build
+dotnet tool restore     # restore Kiota (the build invokes it to regenerate)
+dotnet build            # regenerates ProxmoxSharp.Api from the schema if it changed, then compiles
 dotnet test
 ```
 
-## Refresh the schema
+CI (`.github/workflows/ci.yml`) does the same on push/PR — a clean checkout
+regenerates the client fresh.
+
+## Use it
+
+```csharp
+var client  = ProxmoxApi.Create(options);   // token auth + base URL + TLS handling
+var version = await client.Version.GetAsVersionGetResponseAsync();
+var nodes   = await client.Nodes.GetAsNodesGetResponseAsync();
+```
+
+## Refresh the schema (new Proxmox release)
 
 ```bash
-pwsh schema/refresh.ps1 -Node hpe-01    # auto-detects PVE version, writes apidoc.<ver>.js
+pwsh src/ProxmoxSharp.Api/schema/refresh.ps1 -Node hpe-01   # writes apidoc.<ver>.js
+# then update <Version> + the schema filename in ProxmoxSharp.Api.csproj, and rebuild
 ```
 
 ## Dev token & secrets
@@ -57,26 +75,9 @@ Use a **dedicated read-only** token, not broad creds. The helper creates one
 pwsh scripts/new-dev-token.ps1 -Node hpe-01
 ```
 
-## Regenerate the client
-
-```bash
-pwsh scripts/generate.ps1     # apidoc.js -> OpenAPI -> Kiota C# (src/ProxmoxSharp/Generated)
-```
-
-Generated output (`schema/openapi.json` + `src/ProxmoxSharp/Generated/`) is
-committed so builds need no Kiota run; regenerate only when the schema or
-converter changes. Widen coverage with `-Include` (default `/version,/nodes`).
-
-Use the generated surface via the wired client:
-
-```csharp
-var client = ProxmoxApi.Create(options);       // token auth + base URL + TLS
-var version = await client.Version.GetAsVersionGetResponseAsync();
-var nodes   = await client.Nodes.GetAsNodesGetResponseAsync();
-```
-
 ## Status
 
-M3 done — full pipeline works end-to-end (apidoc.js → OpenAPI → Kiota → live
-reads of `/version` + the `/nodes` subtree, verified against the cluster). Next:
-widen coverage (cluster/storage/access), then M4 `discover` and M5 package.
+M3 done + restructured: split into `ProxmoxSharp.Api` (generated, regen-on-build)
+and `ProxmoxSharp` (library, SemVer); full pipeline verified live against the
+cluster (`/version` + the `/nodes` subtree). Next: widen coverage, then M4
+`discover` and M5 package.

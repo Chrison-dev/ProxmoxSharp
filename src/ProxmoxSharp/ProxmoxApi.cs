@@ -1,5 +1,5 @@
 using Microsoft.Kiota.Http.HttpClientLibrary;
-using ProxmoxSharp.Generated;
+using ProxmoxSharp.Api;
 
 namespace ProxmoxSharp;
 

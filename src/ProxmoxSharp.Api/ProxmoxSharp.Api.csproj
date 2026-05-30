@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- Version tracks the Proxmox API RELEASE the schema was generated from,
+         not SemVer. Breaking changes here are Proxmox's, signalled by this number.
+         Generator-only fixes without a PVE bump → 4th-part revision (9.2.2.1). -->
+    <Version>9.2.2</Version>
+    <Description>Generated Proxmox VE API client (Kiota). Version tracks the PVE API release.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Kiota.Bundle" Version="2.0.0" />
+  </ItemGroup>
+
+  <!-- Generated sources are produced at build (gitignored). Keep them out of the
+       default compile glob; the target below feeds them to the compiler explicitly. -->
+  <ItemGroup>
+    <Compile Remove="Generated/**/*.cs" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <RepoRoot>$(MSBuildProjectDirectory)/../..</RepoRoot>
+    <PveSchemaFile>$(MSBuildProjectDirectory)/schema/apidoc.9.2.2.js</PveSchemaFile>
+    <GeneratedDir>$(MSBuildProjectDirectory)/Generated</GeneratedDir>
+    <!-- Absolute obj/ paths: $(IntermediateOutputPath) isn't set yet at evaluation
+         (the SDK sets it in its targets), so these intermediates live under obj/
+         explicitly (gitignored) regardless of any Exec working directory. -->
+    <OpenApiFile>$(MSBuildProjectDirectory)/obj/openapi.json</OpenApiFile>
+    <GenStamp>$(MSBuildProjectDirectory)/obj/proxmox-gen.stamp</GenStamp>
+    <SchemaGenProject>$(RepoRoot)/tools/ProxmoxSharp.SchemaGen/ProxmoxSharp.SchemaGen.csproj</SchemaGenProject>
+    <!-- Read-path coverage. Widen as needed (e.g. /version,/nodes,/cluster,/storage,/access). -->
+    <ApiIncludePaths>/version,/nodes</ApiIncludePaths>
+  </PropertyGroup>
+
+  <!-- Inputs for incremental regeneration: the schema + the converter's sources. -->
+  <ItemGroup>
+    <SchemaGenSource Include="$(RepoRoot)/tools/ProxmoxSharp.SchemaGen/**/*.cs" />
+  </ItemGroup>
+
+  <!-- Regenerate the client from the Proxmox schema. Incremental: only re-runs when
+       the schema or the converter changes (Inputs newer than the stamp) — so a normal
+       build is a no-op here, and CI regenerates fresh on a clean checkout. -->
+  <Target Name="GenerateProxmoxClient"
+          Inputs="$(PveSchemaFile);@(SchemaGenSource)"
+          Outputs="$(GenStamp)">
+    <Message Importance="high" Text="ProxmoxSharp.Api: regenerating client from $(PveSchemaFile)" />
+    <MakeDir Directories="$(IntermediateOutputPath)" />
+    <Exec WorkingDirectory="$(RepoRoot)"
+          Command="dotnet run --project &quot;$(SchemaGenProject)&quot; -c $(Configuration) -- --in &quot;$(PveSchemaFile)&quot; --out &quot;$(OpenApiFile)&quot; --include $(ApiIncludePaths) --methods GET" />
+    <Exec WorkingDirectory="$(RepoRoot)" Command="dotnet tool restore" />
+    <Exec WorkingDirectory="$(RepoRoot)"
+          Command="dotnet kiota generate -l CSharp -d &quot;$(OpenApiFile)&quot; -c ProxmoxApiClient -n ProxmoxSharp.Api -o &quot;$(GeneratedDir)&quot; --clean-output" />
+    <Touch Files="$(GenStamp)" AlwaysCreate="true" />
+  </Target>
+
+  <!-- Always feed the generated sources to the compiler, after (re)generation. -->
+  <Target Name="IncludeGeneratedSources" DependsOnTargets="GenerateProxmoxClient" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <Compile Include="$(GeneratedDir)/**/*.cs" />
+    </ItemGroup>
+  </Target>
+
+</Project>

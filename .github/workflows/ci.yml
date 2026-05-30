@@ -1,0 +1,31 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # Kiota (pinned in .config/dotnet-tools.json) — needed by the regenerate
+      # step that runs during the ProxmoxSharp.Api build.
+      - name: Restore tools
+        run: dotnet tool restore
+
+      # Build regenerates the ProxmoxSharp.Api client from the pinned schema
+      # (Generated/ is gitignored), then compiles everything.
+      - name: Build
+        run: dotnet build -c Release
+
+      # Live integration tests skip automatically without a secrets.env.
+      - name: Test
+        run: dotnet test -c Release --no-build
