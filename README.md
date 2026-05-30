@@ -57,7 +57,26 @@ Use a **dedicated read-only** token, not broad creds. The helper creates one
 pwsh scripts/new-dev-token.ps1 -Node hpe-01
 ```
 
+## Regenerate the client
+
+```bash
+pwsh scripts/generate.ps1     # apidoc.js -> OpenAPI -> Kiota C# (src/ProxmoxSharp/Generated)
+```
+
+Generated output (`schema/openapi.json` + `src/ProxmoxSharp/Generated/`) is
+committed so builds need no Kiota run; regenerate only when the schema or
+converter changes. Widen coverage with `-Include` (default `/version,/nodes`).
+
+Use the generated surface via the wired client:
+
+```csharp
+var client = ProxmoxApi.Create(options);       // token auth + base URL + TLS
+var version = await client.Version.GetAsVersionGetResponseAsync();
+var nodes   = await client.Nodes.GetAsNodesGetResponseAsync();
+```
+
 ## Status
 
-Early — M1 scaffold. See the hub plan for milestones (M1 scaffold → M2 first
-authed read → M3 generator → M4 discover → M5 package).
+M3 done — full pipeline works end-to-end (apidoc.js → OpenAPI → Kiota → live
+reads of `/version` + the `/nodes` subtree, verified against the cluster). Next:
+widen coverage (cluster/storage/access), then M4 `discover` and M5 package.
