@@ -1,0 +1,13 @@
+<Project>
+
+  <!-- Shared build settings for all ProxmoxSharp projects. -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Authors>Chrison Simtian</Authors>
+    <Company>Homelab</Company>
+    <RepositoryUrl>https://github.com/ChrisonSimtian/ProxmoxSharp</RepositoryUrl>
+  </PropertyGroup>
+
+</Project>
