@@ -29,8 +29,8 @@
     <OpenApiFile>$(MSBuildProjectDirectory)/obj/openapi.json</OpenApiFile>
     <GenStamp>$(MSBuildProjectDirectory)/obj/proxmox-gen.stamp</GenStamp>
     <SchemaGenProject>$(RepoRoot)/tools/ProxmoxSharp.SchemaGen/ProxmoxSharp.SchemaGen.csproj</SchemaGenProject>
-    <!-- Read-path coverage. Widen as needed (e.g. /version,/nodes,/cluster,/storage,/access). -->
-    <ApiIncludePaths>/version,/nodes</ApiIncludePaths>
+    <!-- Read-path coverage. Widen as needed. -->
+    <ApiIncludePaths>/version,/nodes,/cluster,/storage,/access</ApiIncludePaths>
   </PropertyGroup>
 
   <!-- Inputs for incremental regeneration: the schema + the converter's sources. -->
@@ -42,7 +42,7 @@
        the schema or the converter changes (Inputs newer than the stamp) — so a normal
        build is a no-op here, and CI regenerates fresh on a clean checkout. -->
   <Target Name="GenerateProxmoxClient"
-          Inputs="$(PveSchemaFile);@(SchemaGenSource)"
+          Inputs="$(PveSchemaFile);@(SchemaGenSource);$(MSBuildProjectFullPath)"
           Outputs="$(GenStamp)">
     <Message Importance="high" Text="ProxmoxSharp.Api: regenerating client from $(PveSchemaFile)" />
     <MakeDir Directories="$(IntermediateOutputPath)" />
