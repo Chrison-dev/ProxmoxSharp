@@ -75,9 +75,20 @@ Use a **dedicated read-only** token, not broad creds. The helper creates one
 pwsh scripts/new-dev-token.ps1 -Node hpe-01
 ```
 
+## Packages
+
+Published to **GitHub Packages** by `.github/workflows/publish.yml` on a `v*` tag:
+
+| Package | Version |
+| --- | --- |
+| `ProxmoxSharp.Api` | the Proxmox API release (e.g. `9.2.2`) |
+| `ProxmoxSharp` | independent SemVer (e.g. `0.1.0`); depends on `ProxmoxSharp.Api` |
+
+Consuming needs the GitHub feed (`nuget.config`) + a PAT with `read:packages`.
+
 ## Status
 
-M3 done + restructured: split into `ProxmoxSharp.Api` (generated, regen-on-build)
-and `ProxmoxSharp` (library, SemVer); full pipeline verified live against the
-cluster (`/version` + the `/nodes` subtree). Next: widen coverage, then M4
-`discover` and M5 package.
+M1–M5 done. Generated client reads the live cluster; `ProxmoxDiscovery` produces
+a structured `ClusterSnapshot` (nodes → LXC/QEMU/storage/network); both packages
+publish to GitHub Packages. Coverage: `/version,/nodes,/cluster,/storage,/access`
+(338 GET ops). Next: the hub consumes the package; BL-014 CLI; write path (BL-010).
