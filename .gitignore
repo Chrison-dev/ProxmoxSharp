@@ -11,6 +11,9 @@
 *.sln.docstates
 *.env
 
+# ProxmoxSharp.Api Kiota-generated client — regenerated on build, never committed.
+src/ProxmoxSharp.Api/Generated/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

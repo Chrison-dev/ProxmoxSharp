@@ -1,9 +1,21 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Independent SemVer for the hand-written surface. Our breaking changes
+         drive the major; decoupled from the Proxmox API version (ProxmoxSharp.Api). -->
+    <Version>0.1.0</Version>
+    <Description>C# client for Proxmox VE — hand-written runtime over the generated ProxmoxSharp.Api.</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Kiota.Bundle" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../ProxmoxSharp.Api/ProxmoxSharp.Api.csproj" />
+  </ItemGroup>
 
 </Project>
