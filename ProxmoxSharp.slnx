@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/ProxmoxSharp.Api/ProxmoxSharp.Api.csproj" />
+    <Project Path="src/ProxmoxSharp.Cli/ProxmoxSharp.Cli.csproj" />
     <Project Path="src/ProxmoxSharp/ProxmoxSharp.csproj" />
   </Folder>
   <Folder Name="/tests/">
