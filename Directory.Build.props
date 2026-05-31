@@ -7,8 +7,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Authors>Chrison Simtian</Authors>
     <Company>Homelab</Company>
-    <RepositoryUrl>https://github.com/ChrisonSimtian/ProxmoxSharp</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/ChrisonSimtian/ProxmoxSharp</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Chrison-dev/ProxmoxSharp</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Chrison-dev/ProxmoxSharp</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
