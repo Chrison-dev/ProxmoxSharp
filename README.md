@@ -3,7 +3,7 @@
 A C# API client for Proxmox VE — **mostly code-generated from Proxmox's own
 published API schema**, with a thin hand-written runtime for auth and transport.
 
-Built to be dogfooded by the [Homelab](https://github.com/ChrisonSimtian/Homelab)
+Built to be dogfooded by the [Homelab](https://github.com/Chrison-dev/Homelab)
 hub's C#-native IaC (the Discover → Converge path). Design + roadmap live in the
 hub at `docs/plans/BL-009-proxmoxsharp-codegen.md`.
 
