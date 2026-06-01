@@ -28,4 +28,13 @@ public sealed record ProxmoxClientOptions
 
     /// <summary>The value for the <c>Authorization</c> header Proxmox expects.</summary>
     public string AuthorizationHeader => $"PVEAPIToken={TokenId}={TokenSecret}";
+
+    /// <summary>
+    /// Redacted representation. The synthesized record <c>ToString()</c> would
+    /// otherwise print <see cref="TokenSecret"/> (and the computed
+    /// <see cref="AuthorizationHeader"/>), leaking the token into any log or
+    /// interpolated string. The secret is never emitted.
+    /// </summary>
+    public override string ToString() =>
+        $"ProxmoxClientOptions {{ BaseUrl = {BaseUrl}, TokenId = {TokenId}, TokenSecret = ***, VerifyTls = {VerifyTls} }}";
 }
