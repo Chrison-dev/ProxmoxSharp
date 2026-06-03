@@ -6,8 +6,11 @@
     <Nullable>enable</Nullable>
     <!-- Independent SemVer for the hand-written surface. Our breaking changes
          drive the major; decoupled from the Proxmox API version (ProxmoxSharp.Api). -->
-    <!-- VersionPrefix (not Version) so CI can append a -preview.N suffix. -->
-    <VersionPrefix>0.1.0</VersionPrefix>
+    <!-- VersionPrefix (not Version) so CI can append a -preview.N suffix.
+         Bumped to 0.2.0 so the active 0.2.0-preview.N line outranks the earlier
+         0.1.0 stable in NuGet ordering — a `0.1.0-preview.*` float would otherwise
+         resolve the stale 0.1.0 stable (prereleases sort below their release). -->
+    <VersionPrefix>0.2.0</VersionPrefix>
     <Description>C# client for Proxmox VE — hand-written runtime over the generated ProxmoxSharp.Api.</Description>
   </PropertyGroup>
 
