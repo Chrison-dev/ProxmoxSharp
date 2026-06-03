@@ -26,6 +26,12 @@ public sealed record GuestSnapshot
     public string? Name { get; init; }
     public string? Status { get; init; }
     public long? MaxMem { get; init; }
+
+    /// <summary>Allocated CPU cores (Proxmox <c>cpus</c>). Null when not reported.</summary>
+    public int? Cores { get; init; }
+
+    /// <summary>Semicolon-separated tags as Proxmox reports them (<c>tags</c>), e.g. <c>"iac;media"</c>. Null when none.</summary>
+    public string? Tags { get; init; }
 }
 
 public sealed record StorageSnapshot

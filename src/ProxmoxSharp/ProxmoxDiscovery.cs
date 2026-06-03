@@ -56,6 +56,8 @@ public sealed class ProxmoxDiscovery
                     Name = g.Name,
                     Status = g.Status?.ToString(),
                     MaxMem = g.Maxmem,
+                    Cores = g.Cpus is { } c ? (int)c : null,
+                    Tags = g.Tags,
                 }).ToList(),
                 Qemu = qemu.Select(g => new GuestSnapshot
                 {
@@ -63,6 +65,8 @@ public sealed class ProxmoxDiscovery
                     Name = g.Name,
                     Status = g.Status?.ToString(),
                     MaxMem = g.Maxmem,
+                    Cores = g.Cpus is { } c ? (int)c : null,
+                    Tags = g.Tags,
                 }).ToList(),
                 Storage = storage.Select(s => new StorageSnapshot
                 {
