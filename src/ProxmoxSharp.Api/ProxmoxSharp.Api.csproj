@@ -30,8 +30,11 @@
     <OpenApiFile>$(MSBuildProjectDirectory)/obj/openapi.json</OpenApiFile>
     <GenStamp>$(MSBuildProjectDirectory)/obj/proxmox-gen.stamp</GenStamp>
     <SchemaGenProject>$(RepoRoot)/tools/ProxmoxSharp.SchemaGen/ProxmoxSharp.SchemaGen.csproj</SchemaGenProject>
-    <!-- Read-path coverage. Widen as needed. -->
+    <!-- Path coverage (read + write share this scope). Widen as needed. -->
     <ApiIncludePaths>/version,/nodes,/cluster,/storage,/access</ApiIncludePaths>
+    <!-- HTTP verbs to emit. GET = read path; POST/PUT/DELETE enable the VM write
+         path (#115) — create/setConfig/start/stop/delete under /nodes/{node}/qemu. -->
+    <ApiMethods>GET,POST,PUT,DELETE</ApiMethods>
   </PropertyGroup>
 
   <!-- Inputs for incremental regeneration: the schema + the converter's sources. -->
@@ -48,7 +51,7 @@
     <Message Importance="high" Text="ProxmoxSharp.Api: regenerating client from $(PveSchemaFile)" />
     <MakeDir Directories="$(IntermediateOutputPath)" />
     <Exec WorkingDirectory="$(RepoRoot)"
-          Command="dotnet run --project &quot;$(SchemaGenProject)&quot; -c $(Configuration) -- --in &quot;$(PveSchemaFile)&quot; --out &quot;$(OpenApiFile)&quot; --include $(ApiIncludePaths) --methods GET" />
+          Command="dotnet run --project &quot;$(SchemaGenProject)&quot; -c $(Configuration) -- --in &quot;$(PveSchemaFile)&quot; --out &quot;$(OpenApiFile)&quot; --include $(ApiIncludePaths) --methods $(ApiMethods)" />
     <Exec WorkingDirectory="$(RepoRoot)" Command="dotnet tool restore" />
     <Exec WorkingDirectory="$(RepoRoot)"
           Command="dotnet kiota generate -l CSharp -d &quot;$(OpenApiFile)&quot; -c ProxmoxApiClient -n ProxmoxSharp.Api -o &quot;$(GeneratedDir)&quot; --clean-output" />

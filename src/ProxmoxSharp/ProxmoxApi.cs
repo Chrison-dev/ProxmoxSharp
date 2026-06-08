@@ -1,3 +1,4 @@
+using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 using ProxmoxSharp.Api;
 
@@ -11,7 +12,17 @@ namespace ProxmoxSharp;
 /// </summary>
 public static class ProxmoxApi
 {
-    public static ProxmoxApiClient Create(ProxmoxClientOptions options)
+    public static ProxmoxApiClient Create(ProxmoxClientOptions options) =>
+        new(CreateAdapter(options));
+
+    /// <summary>
+    /// Builds the configured Kiota <see cref="IRequestAdapter"/> on its own — token
+    /// auth, base URL, self-signed-cert handling. The write path (<see cref="QemuWriter"/>)
+    /// shares this so it inherits the exact same auth/TLS wiring as the read client,
+    /// while still being able to hand-build requests for Proxmox's indexed params
+    /// (hostpci0/scsi0/…) that the generated typed query surface can't express.
+    /// </summary>
+    public static IRequestAdapter CreateAdapter(ProxmoxClientOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -25,11 +36,9 @@ public static class ProxmoxApi
         }
 
         // The generated client registers the default (JSON) serializers itself.
-        var adapter = new HttpClientRequestAdapter(authProvider, httpClient: new HttpClient(handler))
+        return new HttpClientRequestAdapter(authProvider, httpClient: new HttpClient(handler))
         {
             BaseUrl = options.BaseUrl.AbsoluteUri.TrimEnd('/'),
         };
-
-        return new ProxmoxApiClient(adapter);
     }
 }
