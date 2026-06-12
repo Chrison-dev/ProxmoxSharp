@@ -14,6 +14,11 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <!-- Embed symbols in the assembly (GitHub Packages doesn't take .snupkg). -->
     <DebugType>embedded</DebugType>
+    <!-- No native apphost launcher: the SchemaGen tool runs via `dotnet run` and the
+         CLI ships as a `dotnet tool` (both invoked through the shared host), so the
+         apphost is never used. Skipping it also sidesteps the SDK 10.0.301
+         CreateAppHost/SetUnixFileMode failure on CI runners. -->
+    <UseAppHost>false</UseAppHost>
   </PropertyGroup>
 
 </Project>
