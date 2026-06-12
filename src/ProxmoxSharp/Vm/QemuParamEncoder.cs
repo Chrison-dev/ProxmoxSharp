@@ -125,12 +125,20 @@ public static class QemuParamEncoder
         return string.Join(",", opts);
     }
 
-    /// <summary>hostpci0 value: "&lt;host&gt;[,pcie=1][,x-vga=1][,rombar=0][,romfile=…][,mdev=…]".</summary>
+    /// <summary>
+    /// hostpci0 value: "&lt;mapping=NAME|host&gt;[,pcie=1][,x-vga=1][,rombar=0][,romfile=…][,mdev=…]".
+    /// Prefers the resource-mapping form ("mapping=NAME") — the only form a token can set.
+    /// </summary>
     public static string EncodeHostPci(QemuHostPci h)
     {
         ArgumentNullException.ThrowIfNull(h);
-        if (string.IsNullOrEmpty(h.Host)) throw new ArgumentException($"hostpci '{h.Id}' needs a Host PCI address.");
-        var opts = new List<string> { h.Host };
+        var head = (h.Mapping, h.Host) switch
+        {
+            ({ } m, _) when !string.IsNullOrEmpty(m) => $"mapping={m}",
+            (_, { } host) when !string.IsNullOrEmpty(host) => host,
+            _ => throw new ArgumentException($"hostpci '{h.Id}' needs a Mapping name or a raw Host PCI address."),
+        };
+        var opts = new List<string> { head };
         if (h.Pcie is true) opts.Add("pcie=1");
         if (h.XVga is true) opts.Add("x-vga=1");
         if (h.Rombar is false) opts.Add("rombar=0");   // only emit when explicitly disabled (default is on)

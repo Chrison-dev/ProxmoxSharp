@@ -91,11 +91,21 @@ public sealed record QemuNet
     public bool? Firewall { get; init; }
 }
 
-/// <summary>A PCI(e) passthrough device (hostpciN) — the gaming GPU. <see cref="Id"/> e.g. "hostpci0".</summary>
+/// <summary>
+/// A PCI(e) passthrough device (hostpciN) — the gaming GPU. <see cref="Id"/> e.g. "hostpci0".
+/// <para>
+/// Provide EITHER <see cref="Mapping"/> (a Proxmox PCI resource-mapping name) or
+/// <see cref="Host"/> (a raw PCI address). Prefer <see cref="Mapping"/>: Proxmox only lets
+/// the real <c>root@pam</c> user set a raw <c>hostpciN</c> ("only root can set 'hostpciN'
+/// config for non-mapped devices"), whereas a mapped device is settable by any token with
+/// <c>Mapping.Use</c> — and it's node-portable.
+/// </para>
+/// </summary>
 public sealed record QemuHostPci
 {
     public required string Id { get; init; }
-    public required string Host { get; init; }    // PCI address, e.g. "0000:09:00"
+    public string? Mapping { get; init; }         // PCI resource-mapping name (token-settable; preferred)
+    public string? Host { get; init; }            // raw PCI address, e.g. "0000:09:00" (root@pam only)
     public bool? Pcie { get; init; }
     public bool? XVga { get; init; }
     public bool? Rombar { get; init; }
