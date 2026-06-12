@@ -71,6 +71,52 @@ public class VmReconcilerTests
         Assert.Equal(expected, VmReconciler.Satisfied(want, have));
     }
 
+    [Theory]
+    // a bare NIC model is satisfied by the MAC Proxmox auto-assigned on create
+    [InlineData("virtio,bridge=vmbr0", "virtio=BC:24:11:17:ED:69,bridge=vmbr0", true)]
+    // …but a real model change is still drift
+    [InlineData("e1000,bridge=vmbr0", "virtio=BC:24:11:17:ED:69,bridge=vmbr0", false)]
+    // a size-allocation disk is satisfied by the volume Proxmox realized (volid + size=NG)
+    [InlineData("local-lvm:2,ssd=1", "local-lvm:vm-9999-disk-0,size=2G,ssd=1", true)]
+    // …but a resize (different requested size) IS drift
+    [InlineData("local-lvm:4,ssd=1", "local-lvm:vm-9999-disk-0,size=2G,ssd=1", false)]
+    // …and a wrong storage IS drift
+    [InlineData("local-zfs:2,ssd=1", "local-lvm:vm-9999-disk-0,size=2G,ssd=1", false)]
+    public void Satisfied_treats_created_state_as_idempotent(string want, string have, bool expected)
+    {
+        Assert.Equal(expected, VmReconciler.Satisfied(want, have));
+    }
+
+    // A freshly-CREATED VM (size-alloc disk, unpinned MAC) must re-plan clean — the
+    // gap the live dummy VM 9999 surfaced. Mirrors `qm config 9999` post-create.
+    [Fact]
+    public void Freshly_created_vm_replans_as_skip()
+    {
+        var spec = new QemuVmSpec
+        {
+            Node = "desktop-01", Vmid = 9999, Name = "proxmoxsharp-dev",
+            Machine = "q35", Bios = "seabios", Cpu = "host", Cores = 1, Memory = 512,
+            Ostype = "l26", Onboot = false, Scsihw = "virtio-scsi-single",
+            Disks = [new QemuDisk { Id = "scsi0", Storage = "local-lvm", Size = 2, Ssd = true }],
+            Nets = [new QemuNet { Id = "net0", Bridge = "vmbr0" }],  // no MAC pinned
+            BootOrder = ["scsi0"], Tags = ["dev", "proxmoxsharp"],
+        };
+        var live = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["machine"] = "q35", ["bios"] = "seabios", ["cpu"] = "host", ["cores"] = "1",
+            ["memory"] = "512", ["ostype"] = "l26", ["onboot"] = "0", ["scsihw"] = "virtio-scsi-single",
+            ["scsi0"] = "local-lvm:vm-9999-disk-0,size=2G,ssd=1",           // realized volume
+            ["net0"] = "virtio=BC:24:11:17:ED:69,bridge=vmbr0",            // assigned MAC
+            ["boot"] = "order=scsi0", ["name"] = "proxmoxsharp-dev", ["tags"] = "dev;proxmoxsharp",
+            ["digest"] = "abc", ["meta"] = "creation-qemu=11.0.0", ["smbios1"] = "uuid=…",
+        };
+
+        var plan = VmReconciler.Reconcile(spec, live);
+
+        Assert.Equal(VmActionKind.Skip, plan.Kind);
+        Assert.False(plan.HasChanges);
+    }
+
     // Mirrors the real `qm config 1003` (minus hostpci0): the Bazzite encoder's keys,
     // but with Proxmox's own additions (disk size, reordered options, extra fields).
     private static Dictionary<string, string> Live1003WithoutGpu() => new(StringComparer.Ordinal)

@@ -1,0 +1,17 @@
+{
+  "node": "desktop-01",
+  "vmid": 9999,
+  "name": "proxmoxsharp-dev",
+  "machine": "q35",
+  "bios": "seabios",
+  "cpu": "host",
+  "cores": 1,
+  "memory": 512,
+  "ostype": "l26",
+  "onboot": false,
+  "scsihw": "virtio-scsi-single",
+  "disks": [{ "id": "scsi0", "storage": "local-lvm", "size": 2, "ssd": true }],
+  "nets": [{ "id": "net0", "model": "virtio", "bridge": "vmbr0" }],
+  "bootOrder": ["scsi0"],
+  "tags": ["dev", "proxmoxsharp"]
+}

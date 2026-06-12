@@ -56,15 +56,57 @@ public static class VmReconciler
     }
 
     /// <summary>
-    /// True when every token the desired value declares is present in the live value.
+    /// True when every token the desired value declares is matched by the live value.
     /// Tokens are the comma-separated parts of a Proxmox option string (the leading
     /// positional volume/address plus each <c>k=v</c> option). Extra live tokens are
     /// allowed (Proxmox-added), which is what keeps adoption non-destructive.
+    /// <para>
+    /// Two tokens match beyond plain equality, so a freshly-<i>created</i> VM also
+    /// re-plans clean (not just adopted ones):
+    /// <list type="bullet">
+    ///   <item>a bare key satisfies its valued form — e.g. a NIC model <c>virtio</c>
+    ///   is satisfied by the live <c>virtio=&lt;mac&gt;</c> Proxmox auto-assigned;</item>
+    ///   <item>a size-allocation volume <c>storage:N</c> is satisfied by the realized
+    ///   <c>storage:&lt;volid&gt;</c> + a <c>size=NG</c> token (the volume Proxmox cut).</item>
+    /// </list>
+    /// </para>
     /// </summary>
     public static bool Satisfied(string want, string have)
     {
         var haveTokens = Tokenize(have);
-        return Tokenize(want).All(haveTokens.Contains);
+        return Tokenize(want).All(t => TokenMatched(t, haveTokens));
+    }
+
+    private static bool TokenMatched(string want, HashSet<string> have)
+    {
+        if (have.Contains(want)) return true;
+
+        // (a) bare key ↔ valued form: NIC model `virtio` matches live `virtio=<mac>`.
+        if (!want.Contains('=') && have.Any(h => h.StartsWith(want + "=", StringComparison.Ordinal)))
+            return true;
+
+        // (b) size-allocation `storage:N` matches a realized `storage:<volid>` + `size=NG`.
+        if (TrySplitSizeAlloc(want, out var storage, out var sizeGb)
+            && have.Contains($"size={sizeGb}G")
+            && have.Any(h => h.StartsWith(storage + ":", StringComparison.Ordinal) && !h.Contains('=')))
+            return true;
+
+        return false;
+    }
+
+    // Recognises a fresh-allocation volume token "storage:N" (exactly one ':' and an
+    // all-digit size) — distinct from an adopted volid "storage:vm-123-disk-0" or a
+    // PCI address "0000:09:00" (two colons), neither of which parse here.
+    private static bool TrySplitSizeAlloc(string token, out string storage, out string sizeGb)
+    {
+        storage = ""; sizeGb = "";
+        var i = token.IndexOf(':');
+        if (i <= 0 || token.IndexOf(':', i + 1) >= 0) return false;   // need exactly one ':'
+        var s = token[..i];
+        var n = token[(i + 1)..];
+        if (n.Length == 0 || !n.All(char.IsDigit)) return false;
+        storage = s; sizeGb = n;
+        return true;
     }
 
     private static HashSet<string> Tokenize(string value) =>
