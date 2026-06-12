@@ -18,6 +18,23 @@ public class QemuParamEncoderTests
     }
 
     [Fact]
+    public void HostPci_encodes_the_resource_mapping_form()
+    {
+        // The token-settable form: hostpci0: mapping=<name>,pcie=1,x-vga=1
+        var v = QemuParamEncoder.EncodeHostPci(new QemuHostPci
+        {
+            Id = "hostpci0", Mapping = "AMD_Radeon_RX6600", Pcie = true, XVga = true,
+        });
+        Assert.Equal("mapping=AMD_Radeon_RX6600,pcie=1,x-vga=1", v);
+    }
+
+    [Fact]
+    public void HostPci_without_mapping_or_host_throws()
+    {
+        Assert.Throws<ArgumentException>(() => QemuParamEncoder.EncodeHostPci(new QemuHostPci { Id = "hostpci0" }));
+    }
+
+    [Fact]
     public void HostPci_omits_rombar_unless_explicitly_disabled()
     {
         Assert.Equal("0000:09:00", QemuParamEncoder.EncodeHostPci(new QemuHostPci { Id = "hostpci0", Host = "0000:09:00" }));
