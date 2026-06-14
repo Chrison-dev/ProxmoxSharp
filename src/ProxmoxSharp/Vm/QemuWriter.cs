@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.Kiota.Abstractions;
+using Microsoft.Kiota.Abstractions.Serialization;
 using ProxmoxSharp.Api;
 
 namespace ProxmoxSharp.Vm;
@@ -146,6 +147,14 @@ public sealed class QemuWriter
 
     // --- internals ---------------------------------------------------------
 
+    // Catch-all error mapping: parse ANY error status into ProxmoxApiError, whose
+    // IAdditionalDataHolder grabs every JSON field Proxmox returned (data/errors/message).
+    private static readonly Dictionary<string, ParsableFactory<IParsable>> ErrorMapping = new()
+    {
+        ["4XX"] = static _ => new ProxmoxApiError(),
+        ["5XX"] = static _ => new ProxmoxApiError(),
+    };
+
     private Dictionary<string, object> PathParams(string node, int vmid) => new()
     {
         ["baseurl"] = BaseUrl,
@@ -168,7 +177,21 @@ public sealed class QemuWriter
             ri.SetStreamContent(new MemoryStream(Encoding.UTF8.GetBytes(body)), "application/x-www-form-urlencoded");
         }
 
-        var stream = await _adapter.SendPrimitiveAsync<Stream>(ri, errorMapping: null, cancellationToken: ct).ConfigureAwait(false);
+        Stream? stream;
+        try
+        {
+            stream = await _adapter.SendPrimitiveAsync<Stream>(ri, ErrorMapping, cancellationToken: ct).ConfigureAwait(false);
+        }
+        catch (ProxmoxApiError err)
+        {
+            // Surface Proxmox's actual error body — the generated client otherwise
+            // throws a bare "no error factory for <code>" and discards the message.
+            var detail = err.AdditionalData.Count > 0
+                ? string.Join("; ", err.AdditionalData.Select(kv => $"{kv.Key}={kv.Value}"))
+                : "(empty body)";
+            throw new InvalidOperationException(
+                $"Proxmox {method} {urlTemplate} failed (HTTP {err.ResponseStatusCode}): {detail}", err);
+        }
         if (stream is null) return null;
         await using var _ = stream.ConfigureAwait(false);
         using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct).ConfigureAwait(false);
@@ -180,3 +203,15 @@ public sealed class QemuWriter
 
 /// <summary>A PCI device reported by a node (subset relevant to passthrough).</summary>
 public sealed record PciDevice(string? Id, string? DeviceName, string? VendorName, long? IommuGroup);
+
+/// <summary>
+/// Kiota error type for Proxmox failures. Implements <see cref="IAdditionalDataHolder"/>
+/// with no declared fields, so every property of the error body (data / errors / message)
+/// lands in <see cref="AdditionalData"/> for surfacing.
+/// </summary>
+internal sealed class ProxmoxApiError : ApiException, IAdditionalDataHolder, IParsable
+{
+    public IDictionary<string, object> AdditionalData { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, Action<IParseNode>> GetFieldDeserializers() => new Dictionary<string, Action<IParseNode>>();
+    public void Serialize(ISerializationWriter writer) { }
+}
