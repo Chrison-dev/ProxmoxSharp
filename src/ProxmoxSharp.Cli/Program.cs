@@ -1,10 +1,11 @@
 using System.Text.Json;
 using ProxmoxSharp;
+using ProxmoxSharp.Lxc;
 using ProxmoxSharp.Vm;
 
 // proxmoxsharp — a thin CLI over the ProxmoxSharp library.
 //
-// Commands: discover | nodes | version | vm <plan|apply|start|stop|delete|pci|show>
+// Commands: discover | nodes | version | vm <…> | lxc <start|stop|shutdown|delete>
 // Config (env): PROXMOX_BASE_URL, PROXMOX_TOKEN_ID, PROXMOX_TOKEN_SECRET,
 //               PROXMOX_VERIFY_TLS (optional, 'false' for self-signed nodes)
 
@@ -28,6 +29,11 @@ if (command is "help" or "-h" or "--help")
           vm delete   <node> <vmid> --confirm [--no-purge]   Destroy a VM
           vm pci      <node>             List PCI devices (passthrough discovery)
           vm show     <node> <vmid>      Dump a VM's live config
+
+          lxc start    <node> <vmid>     Start a container
+          lxc stop     <node> <vmid>     Hard-stop (kill) a container
+          lxc shutdown <node> <vmid>     Graceful shutdown (hard-stop fallback)
+          lxc delete   <node> <vmid> --confirm [--force] [--no-purge]   Destroy a container
 
         Config (env): PROXMOX_BASE_URL, PROXMOX_TOKEN_ID, PROXMOX_TOKEN_SECRET,
                       PROXMOX_VERIFY_TLS (optional, 'false' for self-signed)
@@ -73,8 +79,11 @@ switch (command)
     case "vm":
         return await RunVm(args, options);
 
+    case "lxc":
+        return await RunLxc(args, options);
+
     default:
-        Console.Error.WriteLine($"Unknown command '{command}'. Try: discover | nodes | version | vm");
+        Console.Error.WriteLine($"Unknown command '{command}'. Try: discover | nodes | version | vm | lxc");
         return 1;
 }
 
@@ -163,12 +172,54 @@ static async Task<int> RunVm(string[] args, ProxmoxClientOptions options)
     }
 }
 
+// lxc <start|stop|shutdown|delete> — the LXC lifecycle write path (#149).
+static async Task<int> RunLxc(string[] args, ProxmoxClientOptions options)
+{
+    var sub = args.Length > 1 ? args[1].ToLowerInvariant() : "";
+    var writer = PctWriter.Create(options);
+
+    switch (sub)
+    {
+        case "start":
+        case "stop":
+        case "shutdown":
+        {
+            if (!TryNodeVmid(args, out var node, out var vmid)) return 2;
+            var upid = sub switch
+            {
+                "start" => await writer.StartAsync(node, vmid),
+                "stop" => await writer.StopAsync(node, vmid),
+                _ => await writer.ShutdownAsync(node, vmid),
+            };
+            await WaitAndReportLxc(writer, node, upid);
+            return 0;
+        }
+
+        case "delete":
+        {
+            if (!TryNodeVmid(args, out var node, out var vmid)) return 2;
+            if (!args.Contains("--confirm")) { Console.Error.WriteLine("Refusing to delete without --confirm."); return 2; }
+            var purge = !args.Contains("--no-purge");
+            var force = args.Contains("--force");
+            Console.WriteLine($"Destroying LXC {vmid} on {node} (force={force}, purge={purge})…");
+            var upid = await writer.DeleteAsync(node, vmid, force, purge);
+            await WaitAndReportLxc(writer, node, upid);
+            return 0;
+        }
+
+        default:
+            Console.Error.WriteLine("usage: proxmoxsharp lxc <start|stop|shutdown|delete> <node> <vmid> [--force] [--no-purge] --confirm");
+            return 2;
+    }
+}
+
 static bool TryNodeVmid(string[] args, out string node, out int vmid)
 {
     node = ""; vmid = 0;
     if (args.Length < 4 || !int.TryParse(args[3], out vmid))
     {
-        Console.Error.WriteLine($"usage: proxmoxsharp vm {(args.Length > 1 ? args[1] : "<sub>")} <node> <vmid> …");
+        var cmd = args.Length > 0 ? args[0] : "vm";
+        Console.Error.WriteLine($"usage: proxmoxsharp {cmd} {(args.Length > 1 ? args[1] : "<sub>")} <node> <vmid> …");
         return false;
     }
     node = args[2];
@@ -200,6 +251,14 @@ static void PrintPlan(VmPlan plan)
 }
 
 static async Task WaitAndReport(QemuWriter writer, string node, string? upid)
+{
+    if (string.IsNullOrEmpty(upid)) { Console.WriteLine("Done (no task)."); return; }
+    Console.WriteLine($"Task {upid} — waiting…");
+    var exit = await writer.WaitForTaskAsync(node, upid);
+    Console.WriteLine($"Task finished: {exit ?? "(no exit status)"}");
+}
+
+static async Task WaitAndReportLxc(PctWriter writer, string node, string? upid)
 {
     if (string.IsNullOrEmpty(upid)) { Console.WriteLine("Done (no task)."); return; }
     Console.WriteLine($"Task {upid} — waiting…");
