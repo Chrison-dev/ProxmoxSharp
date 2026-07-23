@@ -24,6 +24,10 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # Must match the nuget.org Trusted Publishing policy's Environment field — the
+    # OIDC token only carries the environment claim when the job declares it here,
+    # and the policy rejects the exchange otherwise.
+    environment: Nuget.org
     steps:
       - uses: actions/checkout@v4
 
