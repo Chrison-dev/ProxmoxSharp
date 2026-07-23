@@ -6,10 +6,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
-    <!-- Installable as a dotnet global tool: `dotnet tool install -g ProxmoxSharp.Cli`. -->
+    <!-- Installable as a dotnet global tool: `dotnet tool install -g Chrison.ProxmoxSharp.Cli`.
+         Public nuget.org ID uses the reserved Chrison.* prefix; the invoked command
+         (ToolCommandName) stays `proxmoxsharp`, so usage is unchanged. -->
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>proxmoxsharp</ToolCommandName>
-    <PackageId>ProxmoxSharp.Cli</PackageId>
+    <PackageId>Chrison.ProxmoxSharp.Cli</PackageId>
     <!-- Co-versioned with the library (SemVer); CI appends -preview.N. -->
     <VersionPrefix>0.1.0</VersionPrefix>
     <Description>CLI for ProxmoxSharp — read and discover Proxmox VE from the shell.</Description>

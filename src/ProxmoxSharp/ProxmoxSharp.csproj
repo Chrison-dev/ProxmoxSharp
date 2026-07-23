@@ -11,7 +11,12 @@
          0.1.0 stable in NuGet ordering — a `0.1.0-preview.*` float would otherwise
          resolve the stale 0.1.0 stable (prereleases sort below their release). -->
     <VersionPrefix>0.2.0</VersionPrefix>
-    <Description>C# client for Proxmox VE — hand-written runtime over the generated ProxmoxSharp.Api.</Description>
+    <!-- Public nuget.org ID uses the reserved Chrison.* prefix (the bare
+         'ProxmoxSharp' ID is taken on nuget.org by an unrelated project).
+         AssemblyName/RootNamespace stay 'ProxmoxSharp' (project name) so
+         consumer code — `using ProxmoxSharp;` — is unchanged. -->
+    <PackageId>Chrison.ProxmoxSharp</PackageId>
+    <Description>C# client for Proxmox VE — hand-written runtime over the generated Chrison.ProxmoxSharp.Api.</Description>
   </PropertyGroup>
 
   <ItemGroup>
