@@ -10,7 +10,7 @@
     <RepositoryUrl>https://github.com/Chrison-dev/ProxmoxSharp</RepositoryUrl>
     <PackageProjectUrl>https://github.com/Chrison-dev/ProxmoxSharp</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <!-- Embed symbols in the assembly (GitHub Packages doesn't take .snupkg). -->
     <DebugType>embedded</DebugType>
