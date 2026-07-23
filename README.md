@@ -41,14 +41,18 @@ touching the API version; bump the API when you regenerate from a new Proxmox re
 
 ## Build
 
+Built with [Fallout](https://github.com/Fallout-build/Fallout) (Chris's C#/.NET
+build system, a NUKE successor). Targets: `Compile` → `Test` → `Pack` → `Publish`.
+
 ```bash
-dotnet tool restore     # restore Kiota (the build invokes it to regenerate)
-dotnet build            # regenerates ProxmoxSharp.Api from the schema if it changed, then compiles
-dotnet test
+./build.sh              # default: Test (Compile regenerates ProxmoxSharp.Api from the schema, then compiles)
+./build.sh Pack         # produce the Chrison.* nupkgs into artifacts/
 ```
 
-CI (`.github/workflows/ci.yml`) does the same on push/PR — a clean checkout
-regenerates the client fresh.
+Requires the .NET 10 SDK (see `global.json`) and `GITHUB_PACKAGES_PAT` in the
+environment (a PAT with `read:packages` on the Fallout-build org — the build restores
+`Fallout.*` from that feed, see `nuget.config`). CI (`.github/workflows/ci.yml`) runs
+`./build.sh Test` on push/PR — a clean checkout regenerates the client fresh.
 
 ## Use it
 
@@ -65,7 +69,7 @@ the shell. It's self-contained (bundles the library + generated client), so inst
 needs only the `ProxmoxSharp.Cli` package, not its dependencies.
 
 ```bash
-dotnet tool install -g ProxmoxSharp.Cli   # from the GitHub Packages feed (read:packages)
+dotnet tool install -g Chrison.ProxmoxSharp.Cli   # from nuget.org (public)
 
 export PROXMOX_BASE_URL="https://192.168.179.3:8006/api2/json"
 export PROXMOX_TOKEN_ID="root@pam!token"
@@ -96,23 +100,31 @@ pwsh scripts/new-dev-token.ps1 -Node hpe-01
 
 ## Packages
 
-Published to **GitHub Packages**:
+Published to **nuget.org** (public) under the `Chrison.*` prefix, via **Trusted
+Publishing** (OIDC — no stored API key):
+
+| ID | Versioning |
+| --- | --- |
+| `Chrison.ProxmoxSharp` | independent SemVer (`0.2.0`) |
+| `Chrison.ProxmoxSharp.Api` | tracks the Proxmox API release (`9.2.2`) |
+| `Chrison.ProxmoxSharp.Cli` | `dotnet` tool, co-versioned with the library |
 
 | Trigger | Versions | Workflow |
 | --- | --- | --- |
-| push to `main` | **prerelease** — `…-preview.<run>` (e.g. `0.1.0-preview.42`) | `ci.yml` |
-| `v*` tag | **stable** — from `VersionPrefix` (`0.1.0` / `9.2.2`) | `publish.yml` |
+| push to `main` | **prerelease** — `…-preview.<run>` | `publish.yml` |
+| `v*` tag | **stable** — from `VersionPrefix` | `publish.yml` |
 
 So every merge to `main` ships a referenceable prerelease; tagging cuts a stable
-release. `ProxmoxSharp.Api` versions to the Proxmox release (e.g. `9.2.2`),
-`ProxmoxSharp` to its own SemVer, and the library depends on the matching `.Api`.
+release. The library depends on the matching `.Api`. IDs use the `Chrison.*` prefix
+because the bare `ProxmoxSharp` ID is taken on nuget.org by an unrelated project;
+assembly names and namespaces stay `ProxmoxSharp`, so `using ProxmoxSharp;` is unchanged.
 
-Consuming needs the GitHub feed (`nuget.config`) + a PAT with `read:packages`.
-To track the latest prerelease, float it: `<PackageReference Include="ProxmoxSharp" Version="0.1.0-preview.*" />`.
+Consume from nuget.org like any public package. To track the latest prerelease, float it:
+`<PackageReference Include="Chrison.ProxmoxSharp" Version="0.2.0-preview.*" />`.
 
 ## Status
 
 M1–M5 done. Generated client reads the live cluster; `ProxmoxDiscovery` produces
-a structured `ClusterSnapshot` (nodes → LXC/QEMU/storage/network); both packages
-publish to GitHub Packages. Coverage: `/version,/nodes,/cluster,/storage,/access`
+a structured `ClusterSnapshot` (nodes → LXC/QEMU/storage/network); the packages
+publish to nuget.org. Coverage: `/version,/nodes,/cluster,/storage,/access`
 (338 GET ops). Next: the hub consumes the package; BL-014 CLI; write path (BL-010).
