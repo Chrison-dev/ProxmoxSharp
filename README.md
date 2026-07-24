@@ -1,22 +1,38 @@
 # ProxmoxSharp
 
+[![NuGet](https://img.shields.io/nuget/v/Chrison.ProxmoxSharp.svg)](https://www.nuget.org/packages/Chrison.ProxmoxSharp/)
+[![Downloads](https://img.shields.io/nuget/dt/Chrison.ProxmoxSharp.svg)](https://www.nuget.org/packages/Chrison.ProxmoxSharp/)
+[![ci](https://github.com/Chrison-dev/ProxmoxSharp/actions/workflows/ci.yml/badge.svg)](https://github.com/Chrison-dev/ProxmoxSharp/actions/workflows/ci.yml)
+[![Built with Fallout](https://img.shields.io/badge/built%20with-Fallout-8A2BE2)](https://github.com/Fallout-build/Fallout)
+[![License: MIT](https://img.shields.io/github/license/Chrison-dev/ProxmoxSharp.svg)](LICENSE)
+
 A C# API client for Proxmox VE — **mostly code-generated from Proxmox's own
 published API schema**, with a thin hand-written runtime for auth and transport.
 
-Built to be dogfooded by the [Homelab](https://github.com/Chrison-dev/Homelab)
+```sh
+dotnet add package Chrison.ProxmoxSharp
+dotnet tool install -g Chrison.ProxmoxSharp.Cli   # the `proxmoxsharp` CLI
+```
+
+Built to be dogfooded by the [Homelab](https://github.com/Chrison-Homelab/Homelab)
 hub's C#-native IaC (the Discover → Converge path). Design + roadmap live in the
 hub at `docs/plans/BL-009-proxmoxsharp-codegen.md`.
 
 ## Approach
 
+```mermaid
+flowchart LR
+  APIDOC["📜 apidoc.js<br/>(pinned, from our node)"] --> SG["🔧 ProxmoxSharp.SchemaGen<br/>apidoc → OpenAPI 3.0"]
+  SG --> KIOTA["⚙️ Kiota (pinned tool)<br/>generate C# client"]
+  KIOTA --> API["📦 ProxmoxSharp.Api<br/>generated · tracks PVE version"]
+  API --> RT["✍️ ProxmoxSharp<br/>hand-written runtime<br/>(token auth · {data:…} envelope)"]
+  RT --> CLI["🖥️ proxmoxsharp CLI"]
+  classDef gen fill:#e0e7ff,stroke:#4f46e5;
+  class API gen;
 ```
-apidoc.js (version-matched, pulled from our node)
-   │  ProxmoxSharp.SchemaGen   → OpenAPI 3.0
-   ▼
-Kiota (pinned dotnet tool)     → generated C# request builders + models  (ProxmoxSharp.Api)
-   ▼
-ProxmoxSharp                   = hand-written runtime over it (PVEAPIToken auth, {data:…} envelope)
-```
+
+The generated client is **regenerated on build** (incrementally — only when the
+schema changes) and **not committed**.
 
 The generated client is **regenerated on build** (incrementally — only when the
 schema changes) and **not committed**. Day-to-day work on the hand-written
