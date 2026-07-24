@@ -1,0 +1,4 @@
+# The Proxmox API doc dump is a vendored third-party artifact (~4 MB of JS), not our
+# source. Exclude it from GitHub's language statistics so the repo isn't mislabelled
+# as JavaScript instead of C#.
+src/ProxmoxSharp.Api/schema/apidoc*.js linguist-vendored
