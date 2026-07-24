@@ -10,7 +10,7 @@
          Bumped to 0.2.0 so the active 0.2.0-preview.N line outranks the earlier
          0.1.0 stable in NuGet ordering — a `0.1.0-preview.*` float would otherwise
          resolve the stale 0.1.0 stable (prereleases sort below their release). -->
-    <VersionPrefix>0.2.0</VersionPrefix>
+    <VersionPrefix>0.2.1</VersionPrefix>
     <!-- Public nuget.org ID uses the reserved Chrison.* prefix (the bare
          'ProxmoxSharp' ID is taken on nuget.org by an unrelated project).
          AssemblyName/RootNamespace stay 'ProxmoxSharp' (project name) so

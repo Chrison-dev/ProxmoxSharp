@@ -11,6 +11,8 @@
     <PackageProjectUrl>https://github.com/Chrison-dev/ProxmoxSharp</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <!-- Embed the repo README in every package so nuget.org renders it. -->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <!-- Embed symbols in the assembly (GitHub Packages doesn't take .snupkg). -->
     <DebugType>embedded</DebugType>
@@ -20,5 +22,10 @@
          CreateAppHost/SetUnixFileMode failure on CI runners. -->
     <UseAppHost>false</UseAppHost>
   </PropertyGroup>
+
+  <!-- Pack the repo-root README into every packable project (PackageReadmeFile above). -->
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)README.md')">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
 
 </Project>
