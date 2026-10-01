@@ -13,6 +13,15 @@ public sealed record NodeSnapshot
     public string? Status { get; init; }
     public long? MaxMem { get; init; }
     public long? Uptime { get; init; }
+
+    /// <summary>
+    /// False when the node could not be queried (offline, or PVE answered 595). Its
+    /// guests then come from <c>/cluster/resources</c> (status usually <c>"unknown"</c>),
+    /// and <see cref="Storage"/>/<see cref="Network"/> are empty because they were not read,
+    /// not because the node has none.
+    /// </summary>
+    public bool Reachable { get; init; } = true;
+
     public IReadOnlyList<GuestSnapshot> Lxc { get; init; } = [];
     public IReadOnlyList<GuestSnapshot> Qemu { get; init; } = [];
     public IReadOnlyList<StorageSnapshot> Storage { get; init; } = [];
